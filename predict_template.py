@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import joblib
+import random
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.metrics import roc_curve, roc_auc_score
@@ -33,9 +34,9 @@ class DataGenerater():
             self.Y = pd.read_csv(Ypath)
         except:
             print("loading failure, use default dataset")
-            self.X = pd.DataFrame([[i for i in range(10)] for j in range(100)])
+            self.X = pd.DataFrame([[random.uniform(0,7) for i in range(10)] for j in range(100)] + [[random.uniform(3,10) for i in range(10)] for j in range(100)])
             self.X.columns = [str(i) for i in range(10)]
-            self.Y = pd.DataFrame([i%2 for i in range(100)])
+            self.Y = pd.DataFrame([0 for i in range(100)]+[1 for i in range(100)])
 
     def __len__(self):
        
