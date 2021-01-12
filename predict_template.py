@@ -26,6 +26,7 @@ def main():
     workflow_1.addModel(Model(KNeighborsClassifier(n_neighbors=3), metric))
     workflow_1.fitAllModel()
     workflow_1.testAllModel()
+    metric.show_results()
 
 class DataGenerater():
     def __init__(self, Xpath = r'./', Ypath = r'./'):
@@ -128,8 +129,8 @@ class Model():
     def test(self, X, Y):
         self.predict(X)
         self.confusionMatrix(Y)
-        self.metric.calc_metric(self.name, Y, self.Y_Pred, self.ConfusionMatrix)
         self.plot_roc_curve(X, Y)
+        self.metric.calc_metric(self.name, Y, self.Y_Pred, self.ConfusionMatrix, self.auc_score)
         self.save()
 
 class Metrics():
@@ -141,7 +142,9 @@ class Metrics():
         # self.specificity = []
         self.f1 = []
         self.ConfusionMatrix = []
-    def calc_metric(self, model_name, Y , Y_Pred, ConfusionMatrix):
+        self.AUROC =[]
+        self.result = {}
+    def calc_metric(self, model_name, Y , Y_Pred, ConfusionMatrix, auc):
         self.model += [model_name]
         self.accuracy += [accuracy_score(Y, Y_Pred)]
         self.precision += [precision_score(Y, Y_Pred)]
@@ -149,7 +152,22 @@ class Metrics():
         # self.specificity += []
         self.f1 += [f1_score(Y, Y_Pred)]
         self.ConfusionMatrix += [ConfusionMatrix]
-
+        self.AUROC += [auc]
+    def show_results(self):
+        
+        self.result = {
+            'model':self.model,
+            'accuracy':self.accuracy,
+            'precision': self.precision,
+            'recall': self.recall,
+            # 'specificity': self.specificity,
+            'f1': self.f1,
+            'confusion matrix':self.ConfusionMatrix,
+            'AUROC': self.AUROC
+        }
+        pd.DataFrame(self.result)
+        
+        
 class WorkFlow():
     def __init__(self, x_train, y_train, x_test, y_test):
         self.model_list = []
