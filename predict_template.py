@@ -191,6 +191,20 @@ class DataPreprocessor():
         if self.pcaMethod: self.pca(pca_n_components)
 
 class Model():
+    """Provides raw data
+
+    Length of file from Xpath should equal to the file's from Ypath, or else, errors will happend.
+    BE CAREFUL! If files don't exist, or other errors happend, sample data will be auto-generated.
+
+    Attributes:
+        model: a scikit-learn classification model instance.
+        metric: a metric instance to evaluate and visualize the results from model.
+        name: name of model
+    Raise:
+        If input model aren't from scikit-learn or it doesn't have functions like fit, predict, 
+        predict_proba, it will raise exception. THe solution is to create a new model class inherit 
+        this class and overwrite those function with adapter pattern.
+    """
     def __init__(self, model, metric):
         self.model = model
         self.metric = metric
@@ -301,6 +315,16 @@ class Metrics():
         print(tabulate(pd.DataFrame(self.result), headers='keys', tablefmt='psql'))
         
 class WorkFlow():
+    """Define the functions which need to be applied on each model objects
+
+    Observer pattern, addModel needs to be called before fitAllModel and testAllModel
+    addModel->fitAllModel->testAllModel
+    Attributes:
+        addModel: get models and add them into a list
+        fitAllModel: fit data for all model in list.
+        testAllModel: test data for all model in list
+    """
+
     def __init__(self, x_train, y_train, x_test, y_test, steps):
         self.model_list = []
         self.x_train = x_train
