@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import random
+from sklearn.impute import KNNImputer
 from tabulate import tabulate
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_score, recall_score
@@ -27,20 +28,31 @@ def main():
     workflow_1.addModel(Model(KNeighborsClassifier(n_neighbors=3), metric))
     workflow_1.fitAllModel()
     workflow_1.testAllModel()
-
+    metric.show_results()
+    metric.plotConfusionMatrix()
 
     preprocessor2 = DataPreprocessor(generater.X, generater.Y, fillNansMethod='mean', imbalanceMethod='SMOTE', pcaMethod=True)
     preprocessor2.preprocess(pca_n_components=8)
+    metric2 = Metrics()
     workflow_1 = WorkFlow(preprocessor2.x_train, preprocessor2.y_train, preprocessor2.x_test, preprocessor2.y_test, preprocessor2.steps)
-    workflow_1.addModel(Model(RandomForestClassifier(), metric))
-    workflow_1.addModel(Model(DecisionTreeClassifier(), metric))
-    workflow_1.addModel(Model(KNeighborsClassifier(n_neighbors=3), metric))
+    workflow_1.addModel(Model(RandomForestClassifier(), metric2))
+    workflow_1.addModel(Model(DecisionTreeClassifier(), metric2))
+    workflow_1.addModel(Model(KNeighborsClassifier(n_neighbors=3), metric2))
     workflow_1.fitAllModel()
     workflow_1.testAllModel()
 
-    metric.show_results()
-
+    metric2.show_results()
+    metric2.plotConfusionMatrix()
 class DataGenerater():
+    """Use to provide raw data
+
+    Length of file from Xpath should equal to the file's from Ypath, or else, errors will happend.
+    BE CAREFUL! If files don't exist, or other errors happend, sample data will be auto-generated.
+
+    Attributes:
+        Xpath: Input csv files include features.
+        Ypath: Input csv files include ground truth.
+    """
     def __init__(self, Xpath = r'./', Ypath = r'./'):
         try:
             print('Loading Data')
@@ -55,10 +67,21 @@ class DataGenerater():
     def __len__(self):
        
         return len(self.Y)
-    # def generateRawData(self):
-    #     return self.X, self.Y
 
 class DataPreprocessor():
+    """Provides raw data
+
+    Length of file from Xpath should equal to the file's from Ypath, or else, errors will happend.
+    BE CAREFUL! If files don't exist, or other errors happend, sample data will be auto-generated.
+
+    Attributes:
+        X: Input csv files include features.
+        Y: Input csv files include ground truth.
+        fillNansMethod(str): used to control which methods of filling nan will be used, 
+        imbalanceMethod(str): used to control which methods of processing imblanced data will be used, 
+        pcaMethod(boolean): used to control if Principal Component Analysis (PCA) will be applied on data.
+        steps: making a dict with above 3 parameters. It will be passed to a metric Object.
+    """
     def __init__(self, X, Y, fillNansMethod='None', imbalanceMethod='None', pcaMethod=False):
         self.X = X
         self.Y = Y
@@ -68,19 +91,51 @@ class DataPreprocessor():
         self.steps = {'fillNansMethod' : fillNansMethod,
         'imbalanceMethod' : imbalanceMethod,
         'pca' : pcaMethod}
-    def fillNans(self, method=None):
+
+    """Fills Nans in dataframe
+
+    Fills Nans in pd.DataFrame with some given algoriths. These algos directly 
+    modified the data without returning variables.
+
+    Args:
+        method: a string to control which algo will be used.
+        example:'mean', 'linear', 'zero', 'forward', 'backward', 'kNN'
+    Returns:
+        None
+    """
+    def fillNans(self, method='None'):
         if method == 'mean':
-            self.x_train = self.x_train.fillna(self.x_train.mean())
+            self.X = self.X.fillna(self.X.mean())
         elif method == 'linear':
-            self.x_train = self.x_train.interpolate(method='linear')
+            self.X = self.X.interpolate(method='linear')
         elif method == 'zero':
-            self.x_train = self.x_train.fillna(0)
+            self.X = self.X.fillna(0)
         elif method == 'forward':
-            self.x_train = self.x_train.fillna(method='ffill')
+            self.X = self.X.fillna(method='ffill')
+        elif method == 'kNN':
+            imputer = KNNImputer(n_neighbors=5, weights="distance")
+            tmp = imputer.fit_transform(self.X)
+            self.X.data = tmp
         elif method == 'backward':
-            self.x_train = self.x_train.fillna(method='bfill')
-        # return X, Y
-    def imbalanceProcess(self, method=None):
+            self.X = self.X.fillna(method='bfill')
+        
+
+    """Dealing with imbalanced data
+
+    Imbalanced data will lead to accuracy paradox in test state. That is, 
+    The accuracy of testing will extremely high with low sensitivity or low
+    specificity. It will make the model tend to predict input data 
+    as dominant output. These algos directly 
+    modified the data without returning variables.
+
+    Args:
+        method: a string to control which algo will be used.
+        example:'RandomOverSample', 'ADASYN', 'SMOTE'
+    Returns:
+        None
+    """
+
+    def imbalanceProcess(self, method='None'):
         if method == 'RandomOverSample':
             ros = RandomOverSampler(random_state=999)
             self.x_train, self.y_train = ros.fit_resample(self.x_train, self.y_train)
@@ -92,13 +147,35 @@ class DataPreprocessor():
             self.x_train, self.y_train = sm.fit_resample(self.x_train, self.y_train)
     def normalize(self):
         self.X = normalize(self.X)
+    """Dimension reduction
+
+    Curse of dimensionality happened when input dataset has lots of dimension. It means 
+    this dataset may be sparse and it will take lots of times for models to fit and predict.
+    What's worse is that, the metrics might get lower as the dimension increasing. PCA 
+    can be used to find new independent features with normalization and coordinate projection.
+    
+    Args:
+        n_components(int): the top 'n_components' components which used to generate a new dataset.
+    Returns:
+        None
+    """
     def pca(self, n_components):
         pca = PCA(n_components)
         pca.fit(self.x_train)
         self.pca_x_train = pca.transform(self.x_train)
         self.pca_x_test = pca.transform(self.x_test)
         self.pca_y_train, self.pca_y_test = self.y_train, self.y_test
-        
+    
+
+    """Splits training set and testing set
+    Generate training features, training ground truth, testing features, and testing ground truth
+    
+    Args:
+        shuffle(bool): random sort the dataset, 
+        test_size(float): 0~1, the ratio of training set and testing set
+    Returns:
+        None
+    """
     def split(self):
         np.random.seed(999)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.Y, shuffle = True, test_size = 0.25)
@@ -106,8 +183,9 @@ class DataPreprocessor():
         # self.pca_x_train, self.pca_x_test, self.pca_y_train, self.pca_y_test = train_test_split(self.pca_X, self.Y, shuffle = True, test_size = 0.25)
     def preprocess(self, pca_n_components=5):
         print('Preprocessing Data')
-        self.split()
+        
         self.fillNans(method=self.fillNansMethod)
+        self.split()
         self.imbalanceProcess(method=self.imbalanceMethod)
         
         if self.pcaMethod: self.pca(pca_n_components)
@@ -161,6 +239,7 @@ class Model():
         self.confusionMatrix(Y)
         self.plot_roc_curve(X, Y)
         self.metric.calc_metric(self.name, Y, self.Y_Pred, self.ConfusionMatrix, self.auc_score, self.steps)
+        self.metric.fpr_tprs += [self.fpr_tpr]
         self.save()
 
 class Metrics():
@@ -176,6 +255,7 @@ class Metrics():
         self.fillNansMethod = []
         self.imbalanceMethod = []
         self.pcaMethod = []
+        self.fpr_tprs = []
         self.result = {}
     def calc_metric(self, model_name, Y , Y_Pred, ConfusionMatrix, auc, steps):
         self.model += [model_name]
@@ -189,7 +269,19 @@ class Metrics():
         self.fillNansMethod += [steps['fillNansMethod']]
         self.imbalanceMethod += [steps['imbalanceMethod']]
         self.pcaMethod += [steps['pca']]
-
+    def plotConfusionMatrix(self):
+        plt.figure()
+        for idx, fpr_tpr in enumerate(self.fpr_tprs):
+            fpr, tpr = fpr_tpr[0], fpr_tpr[1]
+            plt.plot(fpr, tpr, label=self.model[idx])
+        plt.plot([0, 1], [0, 1], color='darkblue', linestyle='--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve')
+        plt.legend()
+        plt.axis([0, 1, 0, 1])
+        plt.savefig('ROC_PCA.png')
+        plt.show()
     def show_results(self):
         
         self.result = {
