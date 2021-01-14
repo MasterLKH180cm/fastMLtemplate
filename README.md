@@ -1,16 +1,15 @@
 # ML_template
 A template for building machine models with different preprocess methods and generate report
 ## Dependency
-Package                       Version        
------------------------------ ---------------
-imblearn                      0.0            
-joblib                        1.0.0          
-matplotlib                    3.2.2          
-numpy                         1.19.5         
-pandas                        1.1.5          
-scikit-learn                  0.22.2.post1
-tabulate                      0.8.7          
-Python			                  3
+
+imblearn >= 0.7            
+joblib >= 1.0.0          
+matplotlib >= 3.2.2          
+numpy >= 1.19.5         
+pandas >= 1.1.5          
+scikit-learn >= 0.22.2.post1
+tabulate >= 0.8.7          
+Python >= 3
 ## Info
 template.ipynb is an old version, but it still works.
 predict_template.py is the new version. I have currently refactored the template.ipynb with object-oriented and design pattern.
