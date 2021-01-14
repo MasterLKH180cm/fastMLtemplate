@@ -26,7 +26,7 @@ synthesis the prepreocessor instead of predefine it.
 ## Usage
 1. Loading data: Loading data with csv file, and input data and ground truth is seperated. If raising any error, this code will generate demo data aotomatically.
 2. The official usageis attached below.
-'''python
+```python
 generater = DataGenerater()
 preprocessor = DataPreprocessor(generater.X, generater.Y)
 preprocessor.preprocess(pca_n_components=5)
@@ -39,7 +39,7 @@ workflow.fitAllModel()
 workflow.testAllModel()
 metric.show_results()
 metric.plotConfusionMatrix()
-'''
+```
 ## Download
 git clone https://github.com/MasterLKH180cm/ML_template.git
 ## Advanced
