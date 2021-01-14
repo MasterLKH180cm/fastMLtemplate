@@ -41,7 +41,7 @@ metric.show_results()
 metric.plotConfusionMatrix()
 ```
 ## Download
-git clone https://github.com/MasterLKH180cm/ML_template.git
+git clone https://github.com/MasterLKH180cm/fastMLtemplate.git
 ## Advanced
 You can use any other ML packages to fit your own need.
 If you want to use "deep learning", you can just add training code and validation code here or just add validation code.
