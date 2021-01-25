@@ -32,7 +32,7 @@ def main():
     workflow_1.fitAllModel()
     workflow_1.testAllModel()
     metric.show_results()
-    metric.plotConfusionMatrix()
+    metric.plotROC()
 
     preprocessor2 = DataPreprocessor(
         generater.X, generater.Y, fillNansMethod='mean', imbalanceMethod='SMOTE', pcaMethod=True)
@@ -47,7 +47,7 @@ def main():
     workflow_1.testAllModel()
 
     metric2.show_results()
-    metric2.plotConfusionMatrix()
+    metric2.plotROC()
 
 
 class DataGenerater():
@@ -66,13 +66,13 @@ class DataGenerater():
             print('Loading Data')
             self.X = pd.read_csv(Xpath)
             self.Y = pd.read_csv(Ypath)
-        except:
+        except BaseException:
             print("Loading failure, use default dataset")
             self.X = pd.DataFrame([[random.uniform(0, 9) for i in range(10)] for j in range(
                 10000)] + [[random.uniform(1, 10) for i in range(10)] for j in range(1000)])
             self.X.columns = [str(i) for i in range(10)]
             self.Y = pd.DataFrame(
-                [0 for i in range(10000)]+[1 for i in range(1000)])
+                [0 for i in range(10000)] + [1 for i in range(1000)])
 
     def __len__(self):
 
@@ -87,13 +87,14 @@ class DataPreprocessor():
     Attributes:
         X: Input csv files include features.
         Y: Input csv files include ground truth.
-        fillNansMethod(str): used to control which methods of filling nan will be used, 
-        imbalanceMethod(str): used to control which methods of processing imblanced data will be used, 
+        fillNansMethod(str): used to control which methods of filling nan will be used,
+        imbalanceMethod(str): used to control which methods of processing imblanced data will be used,
         pcaMethod(boolean): used to control if Principal Component Analysis (PCA) will be applied on data.
         steps: making a dict with above 3 parameters. It will be passed to a metric Object.
     """
 
-    def __init__(self, X, Y, fillNansMethod='None', imbalanceMethod='None', pcaMethod=False):
+    def __init__(self, X, Y, fillNansMethod='None',
+                 imbalanceMethod='None', pcaMethod=False):
         self.X = X
         self.Y = Y
         self.fillNansMethod = fillNansMethod
@@ -105,7 +106,7 @@ class DataPreprocessor():
 
     """Fills Nans in dataframe
 
-    Fills Nans in pd.DataFrame with some given algoriths. These algos directly 
+    Fills Nans in pd.DataFrame with some given algoriths. These algos directly
     modified the data without returning variables.
 
     Args:
@@ -133,10 +134,10 @@ class DataPreprocessor():
 
     """Dealing with imbalanced data
 
-    Imbalanced data will lead to accuracy paradox in test state. That is, 
+    Imbalanced data will lead to accuracy paradox in test state. That is,
     The accuracy of testing will extremely high with low sensitivity or low
-    specificity. It will make the model tend to predict input data 
-    as dominant output. These algos directly 
+    specificity. It will make the model tend to predict input data
+    as dominant output. These algos directly
     modified the data without returning variables.
 
     Args:
@@ -164,11 +165,11 @@ class DataPreprocessor():
         self.X = normalize(self.X)
     """Dimension reduction
 
-    Curse of dimensionality happened when input dataset has lots of dimension. It means 
+    Curse of dimensionality happened when input dataset has lots of dimension. It means
     this dataset may be sparse and it will take lots of times for models to fit and predict.
-    What's worse is that, the metrics might get lower as the dimension increasing. PCA 
+    What's worse is that, the metrics might get lower as the dimension increasing. PCA
     can be used to find new independent features with normalization and coordinate projection.
-    
+
     Args:
         n_components(int): the top 'n_components' components which used to generate a new dataset.
     Returns:
@@ -184,9 +185,9 @@ class DataPreprocessor():
 
     """Splits training set and testing set
     Generate training features, training ground truth, testing features, and testing ground truth
-    
+
     Args:
-        shuffle(bool): random sort the dataset, 
+        shuffle(bool): random sort the dataset,
         test_size(float): 0~1, the ratio of training set and testing set
     Returns:
         None
@@ -221,8 +222,8 @@ class Model():
         metric: a metric instance to evaluate and visualize the results from model.
         name: name of model
     Raise:
-        If input model aren't from scikit-learn or it doesn't have functions like fit, predict, 
-        predict_proba, it will raise exception. THe solution is to create a new model class inherit 
+        If input model aren't from scikit-learn or it doesn't have functions like fit, predict,
+        predict_proba, it will raise exception. THe solution is to create a new model class inherit
         this class and overwrite those function with adapter pattern.
     """
 
@@ -308,7 +309,7 @@ class Metrics():
         self.imbalanceMethod += [steps['imbalanceMethod']]
         self.pcaMethod += [steps['pca']]
 
-    def plotConfusionMatrix(self):
+    def plotROC(self):
         plt.figure()
         for idx, fpr_tpr in enumerate(self.fpr_tprs):
             fpr, tpr = fpr_tpr[0], fpr_tpr[1]
@@ -338,7 +339,12 @@ class Metrics():
             'AUROC': self.AUROC
         }
         # print(pd.DataFrame(self.result))
-        print(tabulate(pd.DataFrame(self.result), headers='keys', tablefmt='psql'))
+        print(
+            tabulate(
+                pd.DataFrame(
+                    self.result),
+                headers='keys',
+                tablefmt='psql'))
 
 
 class WorkFlow():
